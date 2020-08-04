@@ -1,83 +1,53 @@
 (function () {
-  angular.module('ShoppingListCheckOff',[])
-         .controller('ToBuyController', ToBuyController)
-         .controller('AlreadyBoughtController', AlreadyBoughtController)
-         .service('ShoppingListCheckOffService', ShoppingListCheckOffService);
+'use strict';
 
-          //To buy list
-         	ToBuyController.$inject =['ShoppingListCheckOffService'];
-         	function ToBuyController (ShoppingListCheckOffService)
-          {
-         		var buy = this;
-         		buy.items = ShoppingListCheckOffService.toBuyItems();
-         		buy.removeItem = function(itemIndex){
-         			ShoppingListCheckOffService.bought(itemIndex);
-         		};
-         	}
+angular.module('data')
+.config(RoutesConfig);
 
-          //Already bought list
-        	AlreadyBoughtController.$inject =['ShoppingListCheckOffService'];
-        	function AlreadyBoughtController (ShoppingListCheckOffService)
-          {
-        		var bought = this;
-        		bought.items = ShoppingListCheckOffService.boughtItems();
-        	}
+RoutesConfig.$inject = ['$stateProvider', '$urlRouterProvider'];
+function RoutesConfig($stateProvider, $urlRouterProvider) {
 
-          //Shopping list service
-        	function ShoppingListCheckOffService()
-          {
-        		var service = this;
-            var toBuyItems =
-            [
-              {name: "Cookies",
-               quantity: 10
-              },
-              {name: "Chocolate",
-               quantity: 3
-              },
-              {name: "Notebook",
-               quantity: 5
-              },
-              {name: "Pens",
-               quantity: 12
-              },
-              {name: "iPhones 7",
-               quantity: 4
-              },
-              {name: "MK bag",
-               quantity: 1
-              },
-              {name: "Laptop",
-               quantity: 4
-              },
-              {name: "Potato",
-               quantity: 8
-              },
-              {name: "Rings",
-               quantity: 2
-              },
-              {name: "Tissues",
-               quantity: 90
-              },
-              {name: "Glasses",
-               quantity: 17
-              }
-            ];
+  // Redirect to home page if no other URL matches
+  $urlRouterProvider.otherwise('/');
 
-        		var boughtItems = [];
+  // *** Set up UI states ***
+  $stateProvider
 
-          	service.bought = function(itemIndex) {
-          			boughtItems.push(toBuyItems[itemIndex]);
-          			toBuyItems.splice(itemIndex, 1);
-          	};
+  // Home page
+  .state('home', {
+    url: '/',
+    templateUrl: 'src/menuapp/templates/home.template.html'
+  })
 
-          	service.boughtItems = function() {
-          			return boughtItems;
-          	};
+  // Categories
+  .state('mainList', {
+    url: '/main-list',
+    templateUrl: 'src/menuapp/templates/main-categories.template.html',
+    controller: 'MainMenuAppController as mainList',
+    resolve: {
+      items: ['MenuDataService', function (MenuDataService) { 
+        return MenuDataService.getAllCategories();
+      }]
+    }	  
+  })
 
-          	service.toBuyItems = function() {
-          			return toBuyItems;
-          	};
-          }
+
+   .state('itemDetail', {
+    url: '/item-detail/{itemId}',
+    templateUrl: 'src/menuapp/templates/item-detail.template.html',
+    controller: 'ItemDetailController as itemDetail',
+    resolve: {
+      item: ['$stateParams', 'MenuDataService',
+            function ($stateParams, MenuDataService) {
+                return MenuDataService.getItemsForCategory($stateParams.itemId)
+                .then(function (items) {
+                  return items.menu_items;
+                });
+            }]
+    }
+  });
+  
+  
+}
 
 })();
